@@ -13,6 +13,56 @@ type ScreenElement =
     | TextElement of TextContent * Rect
     | ImageElement of string * Rect
 
+type Orientation =
+    | Vertical
+    | Horizontal
+
+type DocumentPart =
+    | SplitPart of Orientation * DocumentPart List
+    | TitledPart of TextContent * DocumentPart
+    | TextPart of TextContent
+    | ImagePart of string
+
+let rec documentToScreen doc rc =
+    match doc with
+    | SplitPart (Vertical, parts) ->
+        let divH = rc.Height / (float32 parts.Length)
+
+        parts
+        |> List.mapi (fun i part ->
+            let rc =
+                { rc with
+                    Height = divH
+                    Top = rc.Top + (float32 i) * divH }
+
+            documentToScreen part rc)
+        |> List.concat
+    | SplitPart (Horizontal, parts) ->
+        let divW = rc.Width / (float32 parts.Length)
+
+        parts
+        |> List.mapi (fun i part ->
+            let rc =
+                { rc with
+                    Width = divW
+                    Left = rc.Left + (float32 i) * divW }
+
+            documentToScreen part rc)
+        |> List.concat
+
+    | TitledPart (tc, doc) ->
+        let titleRc = { rc with Height = 35f }
+
+        let restRc =
+            { rc with
+                Height = rc.Height - 35f
+                Top = rc.Top + 35f }
+
+        TextElement(tc, titleRc)
+        :: (documentToScreen doc restRc)
+    | TextPart (tc) -> [ TextElement(tc, rc) ]
+    | ImagePart (img) -> [ ImageElement(img, rc) ]
+
 let deflate rc dw dh =
     { Left = rc.Left + dw
       Top = rc.Top + dh
@@ -32,18 +82,22 @@ let drawString (str: string) x y font brush (canvas: SKCanvas) =
         y
     |> ignore
 
-let drawElements elements (canvas: SKCanvas) =
+let drawElements elements borderDebug (canvas: SKCanvas) =
     use brush = new SKPaint(Color = SKColors.Black)
+    use debugBrush = new SKPaint(Color = SKColors.Red, IsStroke = true)
 
     elements
     |> List.map (fun e ->
         match e with
-        | TextElement (tc, rc) -> drawString tc.Text rc.Left rc.Top tc.Font brush canvas
+        | TextElement (tc, rc) ->
+            drawString tc.Text rc.Left rc.Top tc.Font brush canvas
+            canvas.DrawRect(toSKRect rc, debugBrush)
         | ImageElement (filename, rc) ->
             let dw, dh = rc.Width / 10f, rc.Height / 10f
             let rc = toSKRect (deflate rc dw dh)
             use bmp = SKBitmap.Decode(filename)
-            canvas.DrawBitmap(bmp, rc))
+            canvas.DrawBitmap(bmp, rc)
+            canvas.DrawRect(rc, debugBrush))
 
     |> ignore
 
@@ -60,38 +114,35 @@ let main =
     use textFont = new SKFont(font, 12f)
     use headFont = new SKFont(font, 15f)
 
-    let elements =
-        [ TextElement(
-              { Text = "Functional programming in .NET"
-                Font = headFont },
-              { Left = 10f
-                Top = 0f
-                Width = 400f
-                Height = 30f }
-          )
-          ImageElement(
-              "cover.jpg",
-              { Left = 120f
-                Top = 30f
-                Width = 150f
-                Height = 200f }
-          )
-          TextElement(
-              { Text =
-                  [ "In this book, we'll introduce you to the essential"
-                    "concepts of functional programming, but thanks to the .NET"
-                    "framework, we won't be limited to theoretical examples and we"
-                    "will use many of the rich .NET libraries to show how functional"
-                    "programming can be used in a real-world." ]
-                  |> String.concat "\n"
-                Font = textFont },
-              { Left = 10f
-                Top = 230f
-                Width = 400f
-                Height = 400f }
-          ) ]
+    let doc =
+        TitledPart(
+            { Text = "Functional programming in .NET"
+              Font = headFont },
+            SplitPart(
+                Vertical,
+                [ ImagePart("cover.jpg")
+                  TextPart(
+                      { Text =
+                          [ "In this book, we'll introduce you to the essential"
+                            "concepts of functional programming, but thanks to the .NET"
+                            "framework, we won't be limited to theoretical examples and we"
+                            "will use many of the rich .NET libraries to show how functional"
+                            "programming can be used in a real-world." ]
+                          |> String.concat "\n"
+                        Font = textFont }
+                  ) ]
+            )
+        )
 
-    let image = drawImage (400, 450) 20f (drawElements elements)
+    let elements =
+        documentToScreen
+            doc
+            { Left = 0f
+              Top = 0f
+              Width = 500f
+              Height = 600f }
+
+    let image = drawImage (550, 650) 25f (drawElements elements true)
     let png = image.Encode()
     use file = File.OpenWrite "output.png"
     png.SaveTo file
