@@ -82,6 +82,23 @@ let drawString (str: string) x y font brush (canvas: SKCanvas) =
         y
     |> ignore
 
+let drawBitmap (bmp: SKBitmap) (rc: SKRect) (canvas: SKCanvas) =
+    let ratio = (float32 bmp.Width) / (float32 bmp.Height)
+
+    let w, h =
+        if rc.Width > rc.Height then
+            rc.Height * ratio, rc.Height
+        else
+            rc.Width, rc.Width / ratio
+
+    let bmpRc =
+        { Left = rc.Left + rc.Width / 2f - w / 2f
+          Top = rc.Top + rc.Height / 2f - h / 2f
+          Width = w
+          Height = h }
+
+    canvas.DrawBitmap(bmp, toSKRect bmpRc)
+
 let drawElements elements borderDebug (canvas: SKCanvas) =
     use brush = new SKPaint(Color = SKColors.Black)
     use debugBrush = new SKPaint(Color = SKColors.Red, IsStroke = true)
@@ -91,13 +108,17 @@ let drawElements elements borderDebug (canvas: SKCanvas) =
         match e with
         | TextElement (tc, rc) ->
             drawString tc.Text rc.Left rc.Top tc.Font brush canvas
-            canvas.DrawRect(toSKRect rc, debugBrush)
+
+            if borderDebug then
+                canvas.DrawRect(toSKRect rc, debugBrush)
         | ImageElement (filename, rc) ->
             let dw, dh = rc.Width / 10f, rc.Height / 10f
             let rc = toSKRect (deflate rc dw dh)
             use bmp = SKBitmap.Decode(filename)
-            canvas.DrawBitmap(bmp, rc)
-            canvas.DrawRect(rc, debugBrush))
+            drawBitmap bmp rc canvas
+
+            if borderDebug then
+                canvas.DrawRect(rc, debugBrush))
 
     |> ignore
 
