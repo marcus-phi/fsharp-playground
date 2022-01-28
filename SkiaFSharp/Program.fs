@@ -1,6 +1,7 @@
 ﻿open SkiaSharp
+open System.IO
 
-let main() = 
+let main = 
     let info = SKImageInfo (256, 256)
     use surface = SKSurface.Create info
     let canvas = surface.Canvas
@@ -25,8 +26,8 @@ let main() =
         |> ignore
 
     let image = surface.Snapshot ()
-    let png = image.Encode()
-    use output = new SKFileWStream ("output.png")
-    output.Write (png.ToArray(), int png.Size)
+    let png = image.Encode ()
+    use file = File.OpenWrite "output.png"
+    png.SaveTo file
 
-main() |> ignore
+main
