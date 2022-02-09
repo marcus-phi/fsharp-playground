@@ -9,4 +9,8 @@
     <Compile Include="Program.fs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Plotly.NET" Version="2.0.0-preview.17" />
+  </ItemGroup>
+
 </Project>

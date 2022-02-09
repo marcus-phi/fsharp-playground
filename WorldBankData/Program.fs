@@ -187,3 +187,19 @@ let stats =
             if dataAvailable key then
                 yield title, getForestData key
     }
+
+open Plotly.NET
+
+let chart =
+    let countries = stats |> Seq.map (fun (country, _) -> country)
+
+    [ "1990", 0; "2000", 1; "2005", 2 ]
+    |> Seq.map (fun (year, index) ->
+        let values =
+            stats
+            |> Seq.map (fun (_, values) -> values |> Seq.item index |> float)
+
+        Chart.Column(values, countries, Name = year))
+    |> Chart.combine
+
+chart |> Chart.show
