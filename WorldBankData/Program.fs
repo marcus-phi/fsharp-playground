@@ -201,5 +201,7 @@ let chart =
 
         Chart.Column(values, countries, Name = year))
     |> Chart.combine
+    |> Chart.withLayoutStyle ( Width = 1920, Height = 900 )
+    |> Chart.withXAxis (LayoutObjects.LinearAxis.init (TickAngle = 45))
 
 chart |> Chart.show
