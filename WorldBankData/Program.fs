@@ -40,7 +40,7 @@ let worldBankDownload apiPath props =
 
     retry 5
 
-//[ "region", "EAP"; "incomeLevel", "UMC" ] |> worldBankDownload |> Async.RunSynchronously
+//[ "region", "EAP"; "incomeLevel", "UMC" ] |> worldBankDownload  "country" |> Async.RunSynchronously
 
 open System.Xml.Linq
 
@@ -201,7 +201,7 @@ let chart =
 
         Chart.Column(values, countries, Name = year))
     |> Chart.combine
-    |> Chart.withLayoutStyle ( Width = 1920, Height = 900 )
+    |> Chart.withLayoutStyle (Width = 1920, Height = 900)
     |> Chart.withXAxis (LayoutObjects.LinearAxis.init (TickAngle = 45))
 
 chart |> Chart.show
