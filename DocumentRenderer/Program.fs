@@ -1,5 +1,6 @@
 ﻿open SkiaSharp
 open System.IO
+open System
 
 type Rect =
     { Left: float32
@@ -72,14 +73,32 @@ let deflate rc dw dh =
 let toSKRect rc =
     SKRect(rc.Left, rc.Top, rc.Left + rc.Width, rc.Top + rc.Height)
 
-let drawString (str: string) x y font brush (canvas: SKCanvas) =
-    str.Split "\n"
+let drawString (str: string) (rc: SKRect) (font: SKFont) (brush: SKPaint) (canvas: SKCanvas) =
+    str.Split " "
+    |> Seq.fold
+        (fun (phrases: string []) (word: string) ->
+            let newPhrase =
+                if phrases.Length = 0 then
+                    word
+                else
+                    phrases[phrases.Length - 1] + " " + word
+
+            let blob = SKTextBlob.Create(newPhrase, font)
+
+            if blob.Bounds.Width < rc.Width then
+                if phrases.Length = 0 then
+                    [| newPhrase |]
+                else
+                    Array.append phrases[0 .. phrases.Length - 2] [| newPhrase |]
+            else
+                Array.append phrases [| word |])
+        [||]
     |> Seq.fold
         (fun y line ->
             let blob = SKTextBlob.Create(line, font)
-            canvas.DrawText(blob, x, y + blob.Bounds.Height, brush)
+            canvas.DrawText(blob, rc.Left, y + blob.Bounds.Height, brush)
             y + blob.Bounds.Height)
-        y
+        rc.Top
     |> ignore
 
 let drawBitmap (bmp: SKBitmap) (rc: SKRect) (canvas: SKCanvas) =
@@ -107,10 +126,11 @@ let drawElements elements borderDebug (canvas: SKCanvas) =
     |> List.map (fun e ->
         match e with
         | TextElement (tc, rc) ->
-            drawString tc.Text rc.Left rc.Top tc.Font brush canvas
+            let rc = toSKRect rc
+            drawString tc.Text rc tc.Font brush canvas
 
             if borderDebug then
-                canvas.DrawRect(toSKRect rc, debugBrush)
+                canvas.DrawRect(rc, debugBrush)
         | ImageElement (filename, rc) ->
             let dw, dh = rc.Width / 10f, rc.Height / 10f
             let rc = toSKRect (deflate rc dw dh)
@@ -149,7 +169,7 @@ let main =
                             "framework, we won't be limited to theoretical examples and we"
                             "will use many of the rich .NET libraries to show how functional"
                             "programming can be used in a real-world." ]
-                          |> String.concat "\n"
+                          |> String.concat " "
                         Font = textFont }
                   ) ]
             )
@@ -163,7 +183,7 @@ let main =
               Width = 500f
               Height = 600f }
 
-    let image = drawImage (550, 650) 25f (drawElements elements true)
+    let image = drawImage (550, 650) 25f (drawElements elements false)
     let png = image.Encode()
     use file = File.OpenWrite "output.png"
     png.SaveTo file
