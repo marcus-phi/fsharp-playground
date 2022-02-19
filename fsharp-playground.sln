@@ -11,6 +11,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SkiaFSharp", "SkiaFSharp\Sk
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "WorldBankData", "WorldBankData\WorldBankData.fsproj", "{BE0B21F4-B8EE-4C2C-87F0-99567ADDD828}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ElmishFSharp", "ElmishFSharp\ElmishFSharp.fsproj", "{3B362291-C91A-4CAA-AF9F-B3C14C4F1985}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{BE0B21F4-B8EE-4C2C-87F0-99567ADDD828}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BE0B21F4-B8EE-4C2C-87F0-99567ADDD828}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BE0B21F4-B8EE-4C2C-87F0-99567ADDD828}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B362291-C91A-4CAA-AF9F-B3C14C4F1985}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B362291-C91A-4CAA-AF9F-B3C14C4F1985}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B362291-C91A-4CAA-AF9F-B3C14C4F1985}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B362291-C91A-4CAA-AF9F-B3C14C4F1985}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
