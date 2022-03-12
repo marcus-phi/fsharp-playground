@@ -15,7 +15,11 @@ type MainWindow() as this =
         base.Width <- 800.0
         base.Height <- 600.0
 
-        Program.mkSimple (fun () -> ImageProcessor.init) ImageProcessor.update ImageProcessor.view
+        let init = ImageProcessor.init
+        let update = ImageProcessor.update
+        let view = ImageProcessor.view this
+
+        Program.mkSimple init update view
         |> Program.withHost this
         |> Program.withConsoleTrace
         |> Program.run
