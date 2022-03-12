@@ -12,7 +12,7 @@ type MainWindow() as this =
 
     do
         base.Title <- "Image Processor"
-        base.Width <- 800.0
+        base.Width <- 1024.0
         base.Height <- 600.0
 
         let init = ImageProcessor.init

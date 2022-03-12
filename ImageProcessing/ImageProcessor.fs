@@ -21,16 +21,33 @@ module ImageProcessor =
 
     type State =
         { SelectedImage: Bitmap
-          SelectedFilter: Filter }
+          SelectedFilter: Filter
+          ProcessedImage: Bitmap }
+
+    let processImage (image: Bitmap) filter =
+        match filter with
+        | None -> image
+        | BlackWhite -> image
+        | Blur -> image
 
     let init () =
         { SelectedImage = null
-          SelectedFilter = None }
+          SelectedFilter = None
+          ProcessedImage = null }
 
     let update msg state =
         match msg with
-        | FileSelected file -> { state with SelectedImage = file }
-        | FilterSelected filter -> { state with SelectedFilter = filter }
+        | FileSelected file ->
+            { state with
+                SelectedImage = file
+                ProcessedImage = processImage file state.SelectedFilter }
+        | FilterSelected filter ->
+            if isNull state.SelectedImage then
+                { state with SelectedFilter = filter }
+            else
+                { state with
+                    SelectedFilter = filter
+                    ProcessedImage = processImage state.SelectedImage filter }
 
     let view host (state: State) dispatch =
 
@@ -58,11 +75,19 @@ module ImageProcessor =
                                TextBlock.horizontalAlignment HorizontalAlignment.Center
                                TextBlock.verticalAlignment VerticalAlignment.Center ]
 
-        let imageBox image =
+        let imageBox image attrs =
             Image.create [ Image.source image
                            Image.horizontalAlignment HorizontalAlignment.Stretch
                            Image.verticalAlignment VerticalAlignment.Stretch
-                           Image.stretch Stretch.Uniform ]
+                           Image.stretch Stretch.UniformToFill
+                           attrs ]
+
+        let splitImageBox imageLeft imageRight =
+            Grid.create [ Grid.columnDefinitions "*, 2, *"
+                          Grid.children [ imageBox imageLeft (Image.column 0) :> IView
+                                          Rectangle.create [ Shapes.Rectangle.fill "#cccccc"
+                                                             Shapes.Rectangle.column 1 ]
+                                          imageBox imageRight (Image.column 2) :> IView ] ]
 
         let filterList =
             let nameMap =
@@ -92,4 +117,4 @@ module ImageProcessor =
                                                 if isNull state.SelectedImage then
                                                     emptyPrompt :> IView
                                                 else
-                                                    imageBox state.SelectedImage :> IView ] ]
+                                                    splitImageBox state.SelectedImage state.ProcessedImage :> IView ] ]
