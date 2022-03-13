@@ -13,6 +13,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "WorldBankData", "WorldBankD
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ElmishFSharp", "ElmishFSharp\ElmishFSharp.fsproj", "{3B362291-C91A-4CAA-AF9F-B3C14C4F1985}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AnimalSimulation", "AnimalSimulation\AnimalSimulation.fsproj", "{A6ED37AA-13EB-40C4-B0C0-0A66DB90BA06}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,5 +44,9 @@ Global
 		{3B362291-C91A-4CAA-AF9F-B3C14C4F1985}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3B362291-C91A-4CAA-AF9F-B3C14C4F1985}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3B362291-C91A-4CAA-AF9F-B3C14C4F1985}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6ED37AA-13EB-40C4-B0C0-0A66DB90BA06}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6ED37AA-13EB-40C4-B0C0-0A66DB90BA06}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6ED37AA-13EB-40C4-B0C0-0A66DB90BA06}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6ED37AA-13EB-40C4-B0C0-0A66DB90BA06}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
