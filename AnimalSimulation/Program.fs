@@ -17,7 +17,8 @@ type Location(x: float, y: float) =
     static member (-)(l1: Location, l2: Location) = l1 + (l2 * -1.)
 
 type Simulation =
-    { Animals: list<Location>
+    { IsParallel: bool
+      Animals: list<Location>
       Predators: list<Location> }
 
 let distance (a: Location) (b: Location) =
@@ -78,18 +79,32 @@ let movePredator (state: Simulation) (predator: Location) =
       * (10. / (distance target predator))
 
 let update (state: Simulation) =
+    let isParallel =
+        if Raylib.GetKeyPressed_() = KeyboardKey.KEY_SPACE then
+            not state.IsParallel
+        else
+            state.IsParallel
+
     let animals =
-        state.Animals
-        |> PSeq.map (moveAnimal state)
-        |> List.ofSeq
+        if isParallel then
+            state.Animals
+            |> PSeq.map (moveAnimal state)
+            |> List.ofSeq
+        else
+            state.Animals |> List.map (moveAnimal state)
 
     let predators =
-        state.Predators
-        |> PSeq.map (movePredator state)
-        |> List.ofSeq
+        if isParallel then
+            state.Predators
+            |> PSeq.map (movePredator state)
+            |> List.ofSeq
+        else
+            state.Predators |> List.map (movePredator state)
 
-    { Animals = animals
-      Predators = predators }
+    { state with
+        IsParallel = isParallel
+        Animals = animals
+        Predators = predators }
 
 let render (state: Simulation) =
     Raylib.BeginDrawing()
@@ -102,6 +117,17 @@ let render (state: Simulation) =
     state.Predators
     |> List.map (fun x -> Raylib.DrawCircle(int x.X, int x.Y, 5f, Raylib.RED))
     |> ignore
+
+    Raylib.DrawText(
+        (if state.IsParallel then
+             "Parallel"
+         else
+             "Sequential"),
+        10,
+        10,
+        14,
+        Raylib.BLACK
+    )
 
     Raylib.EndDrawing()
 
@@ -118,7 +144,8 @@ let main _ =
     Raylib.SetTargetFPS(60)
 
     let initState =
-        { Animals = randomLocations 150 |> List.ofSeq
+        { IsParallel = false
+          Animals = randomLocations 150 |> List.ofSeq
           Predators = randomLocations 15 |> List.ofSeq }
 
     mainLoop update render initState
