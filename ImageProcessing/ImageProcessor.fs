@@ -1,5 +1,6 @@
 namespace ImageProcessing
 
+open System.IO
 open Avalonia.Controls
 open Avalonia.FuncUI.Components
 open Avalonia.FuncUI.DSL
@@ -7,12 +8,13 @@ open Avalonia.FuncUI.Types
 open Avalonia.Layout
 open Avalonia.Media
 open Avalonia.Media.Imaging
+open SkiaSharp
 
 module ImageProcessor =
 
     type Filter =
         | None
-        | BlackWhite
+        | Grayscale
         | Blur
 
     type Message =
@@ -24,11 +26,70 @@ module ImageProcessor =
           SelectedFilter: Filter
           ProcessedImage: Bitmap }
 
+    let processPixels (filter: SKColor [] -> SKColor []) (image: Bitmap) =
+        let convertToSKBitmap (bitmap: Bitmap) =
+            use stream = new MemoryStream()
+            bitmap.Save(stream)
+            SKBitmap.Decode(stream.ToArray())
+
+        let convertToBitmap (skBitmap: SKBitmap) =
+            let skImg = SKImage.FromBitmap(skBitmap)
+            new Bitmap(skImg.Encode().AsStream())
+
+        let skBitmap = convertToSKBitmap image
+        skBitmap.Pixels <- filter skBitmap.Pixels
+        convertToBitmap skBitmap
+
+    let filterGrayscale (imagePixels: SKColor []) =
+        imagePixels
+        |> Array.map (fun c ->
+            let newC =
+                (float32 (
+                    (int c.Red) * 11
+                    + (int c.Green) * 59
+                    + (int c.Blue) * 30
+                ))
+                / 100.f
+                |> floor
+                |> byte
+
+            SKColor(newC, newC, newC))
+
+    let filterBlur (width: int, height: int) kernel (imagePixels: SKColor []) =
+        imagePixels
+        |> Array.mapi (fun i c ->
+            let x, y, half = i % width, i / height, kernel / 2
+            let rx, ry = [| x - half .. x + half |], [| y - half .. y + half |]
+
+            let neighbors =
+                Array.allPairs rx ry
+                |> Array.map (fun (nx, ny) ->
+                    if nx < 0 || ny < 0 || nx >= width || ny >= height then
+                        SKColor()
+                    else
+                        imagePixels[ny * height + nx])
+
+            let (sr, sg, sb) =
+                neighbors
+                |> Array.fold (fun (r, g, b) c -> (r + int c.Red, g + int c.Green, b + int c.Blue)) (0, 0, 0)
+
+            let sq = float32 ((half * 2 + 1) * (half * 2 + 1))
+
+            SKColor(
+                float32 sr / sq |> floor |> byte,
+                float32 sg / sq |> floor |> byte,
+                float32 sb / sq |> floor |> byte
+            ))
+
+
     let processImage (image: Bitmap) filter =
         match filter with
         | None -> image
-        | BlackWhite -> image
-        | Blur -> image
+        | Grayscale -> image |> processPixels filterGrayscale
+        | Blur ->
+            image
+            |> processPixels (filterBlur (image.PixelSize.Width, image.PixelSize.Height) 11)
+
 
     let init () =
         { SelectedImage = null
@@ -92,14 +153,14 @@ module ImageProcessor =
         let filterList =
             let nameMap =
                 Map [ (None, "None")
-                      (BlackWhite, "Black & White")
+                      (Grayscale, "Grayscale")
                       (Blur, "Blur") ]
 
             let itemTemplate item =
                 TextBlock.create [ TextBlock.text nameMap.[item] ]
 
             ListBox.create [ ListBox.dataItems [ None
-                                                 BlackWhite
+                                                 Grayscale
                                                  Blur ]
                              ListBox.selectedItem None
                              ListBox.itemTemplate (DataTemplateView<Filter>.create (fun item -> itemTemplate item))
