@@ -22,12 +22,14 @@ module ImageProcessor =
     type Message =
         | FileSelected of Bitmap
         | FilterSelected of Filter
+        | ParallelToggled
 
     type State =
         { SelectedImage: Bitmap
           SelectedFilter: Filter
           ProcessedImage: Bitmap
-          ProcessingTimeMs: int64 option }
+          ProcessingTimeMs: int64 option
+          IsParallel: bool }
 
     let processPixels (filter: SKColor [] -> SKColor []) (image: Bitmap) =
         let convertToSKBitmap (bitmap: Bitmap) =
@@ -85,7 +87,7 @@ module ImageProcessor =
             ))
 
 
-    let processImage (image: Bitmap) filter =
+    let processImage (image: Bitmap) filter isParallel =
         let watch = Stopwatch()
         watch.Start()
 
@@ -106,12 +108,14 @@ module ImageProcessor =
         { SelectedImage = null
           SelectedFilter = NoFilter
           ProcessedImage = null
-          ProcessingTimeMs = None }
+          ProcessingTimeMs = None
+          IsParallel = false }
 
     let update msg state =
         match msg with
         | FileSelected file ->
-            let processedImage, processingTime = processImage file state.SelectedFilter
+            let processedImage, processingTime =
+                processImage file state.SelectedFilter state.IsParallel
 
             { state with
                 SelectedImage = file
@@ -121,12 +125,27 @@ module ImageProcessor =
             if isNull state.SelectedImage then
                 { state with SelectedFilter = filter }
             else
-                let processedImage, processingTime = processImage state.SelectedImage filter
+                let processedImage, processingTime =
+                    processImage state.SelectedImage filter state.IsParallel
 
                 { state with
                     SelectedFilter = filter
                     ProcessedImage = processedImage
                     ProcessingTimeMs = processingTime }
+        | ParallelToggled ->
+            if isNull state.SelectedImage then
+                { state with IsParallel = not state.IsParallel }
+            else
+                let isParallel = not state.IsParallel
+
+                let processedImage, processingTime =
+                    processImage state.SelectedImage state.SelectedFilter isParallel
+
+                { state with
+                    ProcessedImage = processedImage
+                    ProcessingTimeMs = processingTime
+                    IsParallel = isParallel }
+
 
     let view host (state: State) dispatch =
 
@@ -148,6 +167,11 @@ module ImageProcessor =
             Button.create [ Button.content "Select file..."
                             Button.horizontalAlignment HorizontalAlignment.Stretch
                             Button.onClick (fun _ -> Async.Start openImageDialog) ]
+
+        let toggleParallelBtn =
+            ToggleButton.create [ Button.content "Parallel"
+                                  Button.horizontalAlignment HorizontalAlignment.Stretch
+                                  Button.onClick (fun _ -> dispatch ParallelToggled) ]
 
         let emptyPrompt =
             TextBlock.create [ TextBlock.text "No image selected"
@@ -200,6 +224,7 @@ module ImageProcessor =
                                 StackPanel.width 150
                                 StackPanel.background "#222222"
                                 StackPanel.children [ selectFileBtn
+                                                      toggleParallelBtn
                                                       filterList ] ]
 
         DockPanel.create [ DockPanel.lastChildFill true
