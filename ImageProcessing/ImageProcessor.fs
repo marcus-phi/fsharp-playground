@@ -45,46 +45,57 @@ module ImageProcessor =
         skBitmap.Pixels <- filter skBitmap.Pixels
         convertToBitmap skBitmap
 
-    let filterGrayscale (imagePixels: SKColor []) =
-        imagePixels
-        |> Array.map (fun c ->
-            let newC =
-                (float32 (
-                    (int c.Red) * 11
-                    + (int c.Green) * 59
-                    + (int c.Blue) * 30
-                ))
-                / 100.f
-                |> floor
-                |> byte
+    let filterGrayscale isParallel (imagePixels: SKColor []) =
+        let f =
+            fun (c: SKColor) ->
+                let newC =
+                    (float32 (
+                        (int c.Red) * 11
+                        + (int c.Green) * 59
+                        + (int c.Blue) * 30
+                    ))
+                    / 100.f
+                    |> floor
+                    |> byte
 
-            SKColor(newC, newC, newC))
+                SKColor(newC, newC, newC)
 
-    let filterBlur (width: int, height: int) kernel (imagePixels: SKColor []) =
-        imagePixels
-        |> Array.mapi (fun i c ->
-            let x, y, half = i % width, i / height, kernel / 2
-            let rx, ry = [| x - half .. x + half |], [| y - half .. y + half |]
+        if isParallel then
+            imagePixels |> Array.Parallel.map f
+        else
+            imagePixels |> Array.map f
 
-            let neighbors =
-                Array.allPairs rx ry
-                |> Array.map (fun (nx, ny) ->
-                    if nx < 0 || ny < 0 || nx >= width || ny >= height then
-                        SKColor()
-                    else
-                        imagePixels[ny * height + nx])
+    let filterBlur (width: int, height: int) kernel isParallel (imagePixels: SKColor []) =
+        let f =
+            fun idx ->
+                let x, y, half = idx % width, idx / height, kernel / 2
+                let rx, ry = [| x - half .. x + half |], [| y - half .. y + half |]
 
-            let (sr, sg, sb) =
-                neighbors
-                |> Array.fold (fun (r, g, b) c -> (r + int c.Red, g + int c.Green, b + int c.Blue)) (0, 0, 0)
+                let neighbors =
+                    Array.allPairs rx ry
+                    |> Array.map (fun (nx, ny) ->
+                        if nx < 0 || ny < 0 || nx >= width || ny >= height then
+                            SKColor()
+                        else
+                            imagePixels[ny * height + nx])
 
-            let sq = float32 ((half * 2 + 1) * (half * 2 + 1))
+                let (sr, sg, sb) =
+                    neighbors
+                    |> Array.fold (fun (r, g, b) c -> (r + int c.Red, g + int c.Green, b + int c.Blue)) (0, 0, 0)
 
-            SKColor(
-                float32 sr / sq |> floor |> byte,
-                float32 sg / sq |> floor |> byte,
-                float32 sb / sq |> floor |> byte
-            ))
+                let sq = float32 ((half * 2 + 1) * (half * 2 + 1))
+
+                SKColor(
+                    float32 sr / sq |> floor |> byte,
+                    float32 sg / sq |> floor |> byte,
+                    float32 sb / sq |> floor |> byte
+                )
+
+        if isParallel then
+            imagePixels
+            |> Array.Parallel.mapi (fun i c -> f i)
+        else
+            imagePixels |> Array.mapi (fun i c -> f i)
 
 
     let processImage (image: Bitmap) filter isParallel =
@@ -94,10 +105,13 @@ module ImageProcessor =
         let processedImage, processingTime =
             match filter with
             | NoFilter -> image, None
-            | Grayscale -> image |> processPixels filterGrayscale, Some(watch.ElapsedMilliseconds)
+            | Grayscale ->
+                image
+                |> processPixels (filterGrayscale isParallel),
+                Some(watch.ElapsedMilliseconds)
             | Blur ->
                 image
-                |> processPixels (filterBlur (image.PixelSize.Width, image.PixelSize.Height) 11),
+                |> processPixels (filterBlur (image.PixelSize.Width, image.PixelSize.Height) 11 isParallel),
                 Some(watch.ElapsedMilliseconds)
 
         watch.Stop()
