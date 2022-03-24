@@ -1,5 +1,7 @@
 namespace ImageProcessing
 
+open System
+open System.Diagnostics
 open System.IO
 open Avalonia.Controls
 open Avalonia.FuncUI.Components
@@ -13,7 +15,7 @@ open SkiaSharp
 module ImageProcessor =
 
     type Filter =
-        | None
+        | NoFilter
         | Grayscale
         | Blur
 
@@ -24,7 +26,8 @@ module ImageProcessor =
     type State =
         { SelectedImage: Bitmap
           SelectedFilter: Filter
-          ProcessedImage: Bitmap }
+          ProcessedImage: Bitmap
+          ProcessingTimeMs: int64 option }
 
     let processPixels (filter: SKColor [] -> SKColor []) (image: Bitmap) =
         let convertToSKBitmap (bitmap: Bitmap) =
@@ -83,32 +86,47 @@ module ImageProcessor =
 
 
     let processImage (image: Bitmap) filter =
-        match filter with
-        | None -> image
-        | Grayscale -> image |> processPixels filterGrayscale
-        | Blur ->
-            image
-            |> processPixels (filterBlur (image.PixelSize.Width, image.PixelSize.Height) 11)
+        let watch = Stopwatch()
+        watch.Start()
+
+        let processedImage, processingTime =
+            match filter with
+            | NoFilter -> image, None
+            | Grayscale -> image |> processPixels filterGrayscale, Some(watch.ElapsedMilliseconds)
+            | Blur ->
+                image
+                |> processPixels (filterBlur (image.PixelSize.Width, image.PixelSize.Height) 11),
+                Some(watch.ElapsedMilliseconds)
+
+        watch.Stop()
+        processedImage, processingTime
 
 
     let init () =
         { SelectedImage = null
-          SelectedFilter = None
-          ProcessedImage = null }
+          SelectedFilter = NoFilter
+          ProcessedImage = null
+          ProcessingTimeMs = None }
 
     let update msg state =
         match msg with
         | FileSelected file ->
+            let processedImage, processingTime = processImage file state.SelectedFilter
+
             { state with
                 SelectedImage = file
-                ProcessedImage = processImage file state.SelectedFilter }
+                ProcessedImage = processedImage
+                ProcessingTimeMs = processingTime }
         | FilterSelected filter ->
             if isNull state.SelectedImage then
                 { state with SelectedFilter = filter }
             else
+                let processedImage, processingTime = processImage state.SelectedImage filter
+
                 { state with
                     SelectedFilter = filter
-                    ProcessedImage = processImage state.SelectedImage filter }
+                    ProcessedImage = processedImage
+                    ProcessingTimeMs = processingTime }
 
     let view host (state: State) dispatch =
 
@@ -143,26 +161,37 @@ module ImageProcessor =
                            Image.stretch Stretch.UniformToFill
                            attrs ]
 
-        let splitImageBox imageLeft imageRight =
+        let splitImageBox imageLeft imageRight processingTimeMs =
+            let timePrompt =
+                match processingTimeMs with
+                | Some ms -> TimeSpan.FromMilliseconds(float ms).ToString("g")
+                | None -> "N/A"
+
             Grid.create [ Grid.columnDefinitions "*, 2, *"
-                          Grid.children [ imageBox imageLeft (Image.column 0) :> IView
+                          Grid.children [ imageBox imageLeft (Image.column 0)
                                           Rectangle.create [ Shapes.Rectangle.fill "#cccccc"
                                                              Shapes.Rectangle.column 1 ]
-                                          imageBox imageRight (Image.column 2) :> IView ] ]
+                                          imageBox imageRight (Image.column 2)
+                                          TextBlock.create [ TextBlock.text $"Processing time: {timePrompt}"
+                                                             TextBlock.background "#88333333"
+                                                             TextBlock.column 2
+                                                             TextBlock.padding (7., 5.)
+                                                             TextBlock.horizontalAlignment HorizontalAlignment.Center
+                                                             TextBlock.verticalAlignment VerticalAlignment.Top ] ] ]
 
         let filterList =
             let nameMap =
-                Map [ (None, "None")
+                Map [ (NoFilter, "None")
                       (Grayscale, "Grayscale")
                       (Blur, "Blur") ]
 
             let itemTemplate item =
                 TextBlock.create [ TextBlock.text nameMap.[item] ]
 
-            ListBox.create [ ListBox.dataItems [ None
+            ListBox.create [ ListBox.dataItems [ NoFilter
                                                  Grayscale
                                                  Blur ]
-                             ListBox.selectedItem None
+                             ListBox.selectedItem NoFilter
                              ListBox.itemTemplate (DataTemplateView<Filter>.create (fun item -> itemTemplate item))
                              ListBox.onSelectedItemChanged (fun item -> dispatch (FilterSelected(item :?> Filter))) ]
 
@@ -178,4 +207,8 @@ module ImageProcessor =
                                                 if isNull state.SelectedImage then
                                                     emptyPrompt :> IView
                                                 else
-                                                    splitImageBox state.SelectedImage state.ProcessedImage :> IView ] ]
+                                                    splitImageBox
+                                                        state.SelectedImage
+                                                        state.ProcessedImage
+                                                        state.ProcessingTimeMs
+                                                    :> IView ] ]
