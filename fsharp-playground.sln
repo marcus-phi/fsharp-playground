@@ -15,6 +15,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ElmishFSharp", "ElmishFShar
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AnimalSimulation", "AnimalSimulation\AnimalSimulation.fsproj", "{A6ED37AA-13EB-40C4-B0C0-0A66DB90BA06}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ImageProcessing", "ImageProcessing\ImageProcessing.fsproj", "{CA809F4F-6717-44FC-A425-51C07452E64A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,5 +50,9 @@ Global
 		{A6ED37AA-13EB-40C4-B0C0-0A66DB90BA06}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A6ED37AA-13EB-40C4-B0C0-0A66DB90BA06}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A6ED37AA-13EB-40C4-B0C0-0A66DB90BA06}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CA809F4F-6717-44FC-A425-51C07452E64A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CA809F4F-6717-44FC-A425-51C07452E64A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CA809F4F-6717-44FC-A425-51C07452E64A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CA809F4F-6717-44FC-A425-51C07452E64A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
