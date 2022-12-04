@@ -2,9 +2,9 @@
 open Avalonia
 open Avalonia.Controls
 open Avalonia.Controls.ApplicationLifetimes
-open Avalonia.FuncUI.Components.Hosts
 open Avalonia.FuncUI.DSL
 open Avalonia.FuncUI.Elmish
+open Avalonia.FuncUI.Hosts
 open Avalonia.Layout
 open Avalonia.Themes.Fluent
 open Elmish

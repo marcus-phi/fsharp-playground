@@ -4,7 +4,7 @@ open System
 open System.Diagnostics
 open System.IO
 open Avalonia.Controls
-open Avalonia.FuncUI.Components
+open Avalonia.FuncUI
 open Avalonia.FuncUI.DSL
 open Avalonia.FuncUI.Types
 open Avalonia.Layout

@@ -10,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Plotly.NET" Version="2.0.0-preview.17" />
+    <PackageReference Include="Plotly.NET" Version="3.0.1" />
   </ItemGroup>
 
 </Project>

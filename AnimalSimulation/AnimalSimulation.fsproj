@@ -11,7 +11,7 @@
 
     <ItemGroup>
       <PackageReference Include="FSharp.Collections.ParallelSeq" Version="1.2.0" />
-      <PackageReference Include="Raylib-CsLo" Version="4.0.0" />
+      <PackageReference Include="Raylib-CsLo" Version="4.2.0.3" />
     </ItemGroup>
 
 </Project>

@@ -2,8 +2,8 @@ namespace ImageProcessing
 
 open Avalonia
 open Avalonia.Controls.ApplicationLifetimes
-open Avalonia.FuncUI.Components.Hosts
 open Avalonia.FuncUI.Elmish
+open Avalonia.FuncUI.Hosts
 open Avalonia.Themes.Fluent
 open Elmish
 
